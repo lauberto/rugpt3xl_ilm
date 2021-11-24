@@ -6,12 +6,13 @@ import regex as re
 import warnings
 
 from .constants import GPT2_TOKENIZER_LEN
-from .paths import OFFICIAL_GPT2_ENCODER_DIR
+from .paths import OFFICIAL_GPT2_ENCODER_DIR, OFFICIAL_RUGPT3_ENCODER_DIR
 from .official_gpt2_encoder.encoder import Encoder as OfficialEncoder
 
 class Tokenizer(Enum):
   CUSTOM = 0
   GPT2 = 1
+  RUGPTXL = 2
 
 DEFAULT_TOKENIZER = Tokenizer.GPT2
 
@@ -39,6 +40,16 @@ def _get_tokenizer_state(tokenizer):
       with open(os.path.join(OFFICIAL_GPT2_ENCODER_DIR, 'encoder.json'), 'r') as f:
         encoder_json = json.load(f)
       with open(os.path.join(OFFICIAL_GPT2_ENCODER_DIR, 'vocab.bpe'), 'r', encoding='utf-8') as f:
+        bpe_data = f.read()
+      bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
+      official_encoder = OfficialEncoder(
+          encoder=encoder_json,
+          bpe_merges=bpe_merges)
+      _TOKENIZER_TO_STATE[tokenizer] = official_encoder
+    elif tokenizer == Tokenizer.RUGPT3XL:
+      with open(os.path.join(OFFICIAL_RUGPT3_ENCODER_DIR, 'vocab.json'), 'r') as f:
+        encoder_json = json.load(f)
+      with open(os.path.join(OFFICIAL_RUGPT3_ENCODER_DIR, 'merges.txt'), 'r') as f:
         bpe_data = f.read()
       bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
       official_encoder = OfficialEncoder(
@@ -159,7 +170,7 @@ def decode(tokens_ids, tokenizer=DEFAULT_TOKENIZER):
 def vocab_size(tokenizer=DEFAULT_TOKENIZER):
   state = _get_tokenizer_state(tokenizer)
 
-  if tokenizer == Tokenizer.GPT2:
+  if tokenizer == Tokenizer.GPT2 or tokenizer == Tokenizer.RUGPT3XL:
     vocab_size = len(state.encoder)
   elif tokenizer == Tokenizer.CUSTOM:
     vocab_size = len(state[0])

@@ -16,6 +16,7 @@ from .model import GPT3Model
 from .download_utils import download_model_files
 from transformers.utils import logging
 
+from ..ilm.official_gpt2_encoder.encoder import get_encoder
 
 logger = logging.get_logger(__name__)
 NoneType = type(None)
@@ -163,7 +164,7 @@ class RuGPT3XL(PreTrainedModel):
         self.tokenizer = tokenizer
 
     @classmethod
-    def from_pretrained(cls, model_name_or_path=None, seq_len=512, weights_path=None, deepspeed_config_path=None):
+    def from_pretrained(cls, model_name_or_path=None, tokenizer=None,seq_len=512, weights_path=None, deepspeed_config_path=None):
         init_method = 'tcp://' + os.getenv('MASTER_ADDR', 'localhost') + ':' + os.getenv('MASTER_PORT', '6000')
         try:
             torch.distributed.init_process_group(backend='nccl', world_size=1, rank=0, init_method=init_method)
@@ -176,7 +177,10 @@ class RuGPT3XL(PreTrainedModel):
         np.random.seed(seed)
         torch.manual_seed(seed)
         mpu.model_parallel_cuda_manual_seed(seed)
-        tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path)
+        if not tokenizer:
+            tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path)
+        else:
+            tokenizer = get_encoder(tokenizer)
         logger.info("Check cached model files...")
         if weights_path is None:
             weights_path, deepspeed_config_path = download_model_files(model_name_or_path)

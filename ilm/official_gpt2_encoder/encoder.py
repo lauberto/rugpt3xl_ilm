@@ -5,6 +5,9 @@ import json
 import regex as re
 from functools import lru_cache
 
+from ..tokenize_util import Tokenizer
+from ..paths import OFFICIAL_GPT2_ENCODER_DIR, OFFICIAL_RUGPT3_ENCODER_DIR
+
 @lru_cache()
 def bytes_to_unicode():
     """
@@ -104,14 +107,29 @@ class Encoder:
         text = ''.join([self.decoder[token] for token in tokens])
         text = bytearray([self.byte_decoder[c] for c in text]).decode('utf-8', errors=self.errors)
         return text
-
-def get_encoder(model_name, models_dir):
-    with open(os.path.join(models_dir, model_name, 'encoder.json'), 'r') as f:
-        encoder = json.load(f)
-    with open(os.path.join(models_dir, model_name, 'vocab.bpe'), 'r', encoding="utf-8") as f:
-        bpe_data = f.read()
-    bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
-    return Encoder(
-        encoder=encoder,
-        bpe_merges=bpe_merges,
-    )
+        
+def get_encoder(tokenizer):
+    if tokenizer == Tokenizer.RUGPT3XL:
+        models_dir = OFFICIAL_RUGPT3_ENCODER_DIR
+        with open(os.path.join(models_dir, 'vocab.json'), 'r') as f:
+            encoder = json.load(f)
+        with open(os.path.join(models_dir, 'merges.txt'), 'r', encoding="utf-8") as f:
+            bpe_data = f.read()
+        bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
+        return Encoder(
+            encoder=encoder,
+            bpe_merges=bpe_merges,
+        )
+    elif tokenizer == Tokenizer.GPT2:
+        models_dir = OFFICIAL_GPT2_ENCODER_DIR
+        with open(os.path.join(models_dir, 'encoder.json'), 'r') as f:
+            encoder = json.load(f)
+        with open(os.path.join(models_dir, 'vocab.bpe'), 'r', encoding="utf-8") as f:
+            bpe_data = f.read()
+        bpe_merges = [tuple(merge_str.split()) for merge_str in bpe_data.split('\n')[1:-1]]
+        return Encoder(
+            encoder=encoder,
+            bpe_merges=bpe_merges,
+        )
+    else:
+        raise NotImplementedError("Only GPT2 and RUGPT3XL tokenizer-wrapping is supported.")

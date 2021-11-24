@@ -23,6 +23,8 @@ import ilm.mask
 import ilm.mask.util
 import ilm.tokenize_util
 
+from src.xl_wrapper import RuGPT3XL 
+
 class Task(Enum):
   # Example: She ate <?> for <?><S>cereal<E>breakfast<E>
   ILM = 0
@@ -403,17 +405,24 @@ def train(args):
   if args.model_name in ilm.constants.GPT2_MODEL_NAMES:
     model_type = GPT2LMHeadModel
     cfg_type = GPT2Config
+  elif args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
+    model_type = RuGPT3XL
   if resuming:
     print('from saved checkpoint (resuming)')
     model = model_type.from_pretrained(args.train_dir)
   else:
     if args.train_from_scratch:
+      if args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
+        raise NotImplementedError("Training from scratch with rugpt3xl is not implemented.") 
       print('from scratch')
       cfg = cfg_type.from_pretrained(args.model_name)
       model = model_type(cfg)
     else:
       print('from pretrained checkpoint')
-      model = model_type.from_pretrained(args.model_name)
+      if args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
+        model = model_type.from_pretrained(args.model_name, tokenizer=tokenizer, seq_len=512)
+      else:
+        model = model_type.from_pretrained(args.model_name)
   model.resize_token_embeddings(vocab_size)
   model.to(device)
   model.train()
