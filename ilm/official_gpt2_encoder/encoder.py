@@ -5,8 +5,6 @@ import json
 import regex as re
 from functools import lru_cache
 
-from ilm.tokenize_util import Tokenizer
-from ilm.paths import OFFICIAL_GPT2_ENCODER_DIR, OFFICIAL_RUGPT3_ENCODER_DIR
 
 @lru_cache()
 def bytes_to_unicode():

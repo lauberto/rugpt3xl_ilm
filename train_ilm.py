@@ -584,6 +584,7 @@ def train(args):
           model.train()
 
         # Train
+        # Inputs are token_ids [34, 578, 9002, ...]
         inputs, tts = tuple(t.to(device) for t in batch)
         # TODO: Option to train on CONTEXT_SPECIAL?
         labels_context = tts_to_labels(inputs, tts, [TargetType.CONTEXT])

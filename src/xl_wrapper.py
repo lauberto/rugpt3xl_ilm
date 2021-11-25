@@ -16,7 +16,6 @@ from .model import GPT3Model
 from .download_utils import download_model_files
 from transformers.utils import logging
 
-from ..ilm.official_gpt2_encoder.encoder import get_encoder
 
 logger = logging.get_logger(__name__)
 NoneType = type(None)
@@ -154,17 +153,27 @@ class ModelOutput(object):
 
 
 class RuGPT3XL(PreTrainedModel):
+    # def __init__(self, model, tokenizer, model_path, seq_len=512):
+    #     super().__init__(PretrainedConfig())
+    #     self.model = model
+    #     self.pad_token_id = tokenizer.encoder['<pad>']
+    #     self.eos_token_id = tokenizer.encoder['<|endoftext|>']
+    #     self.seq_len = seq_len
+    #     self.model_path = model_path
+    #     self.tokenizer = tokenizer
+
     def __init__(self, model, tokenizer, model_path, seq_len=512):
         super().__init__(PretrainedConfig())
         self.model = model
-        self.pad_token_id = tokenizer.encoder['<pad>']
-        self.eos_token_id = tokenizer.encoder['<|endoftext|>']
-        self.seq_len = seq_len
+        # self.pad_token_id = tokenizer.encoder['<pad>']
+        # self.eos_token_id = tokenizer.encoder['<|endoftext|>']
+        # self.seq_len = seq_len
         self.model_path = model_path
-        self.tokenizer = tokenizer
+        # self.tokenizer = tokenizer
 
     @classmethod
-    def from_pretrained(cls, model_name_or_path=None, tokenizer=None,seq_len=512, weights_path=None, deepspeed_config_path=None):
+    # def from_pretrained(cls, model_name_or_path=None, seq_len=512, weights_path=None, deepspeed_config_path=None):
+    def from_pretrained(cls, model_name_or_path=None, seq_len=512, weights_path=None, deepspeed_config_path=None):
         init_method = 'tcp://' + os.getenv('MASTER_ADDR', 'localhost') + ':' + os.getenv('MASTER_PORT', '6000')
         try:
             torch.distributed.init_process_group(backend='nccl', world_size=1, rank=0, init_method=init_method)
@@ -177,135 +186,136 @@ class RuGPT3XL(PreTrainedModel):
         np.random.seed(seed)
         torch.manual_seed(seed)
         mpu.model_parallel_cuda_manual_seed(seed)
-        if not tokenizer:
-            tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path)
-        else:
-            tokenizer = get_encoder(tokenizer)
+        # if not tokenizer:
+        #     tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path)
+        # else:
+        #     tokenizer = Encoder(tokenizer)
         logger.info("Check cached model files...")
         if weights_path is None:
             weights_path, deepspeed_config_path = download_model_files(model_name_or_path)
         model = setup_model(weights_path, deepspeed_config_path)
         model.cuda()
         model = model.eval()
-        return cls(model, tokenizer=tokenizer, seq_len=seq_len, model_path=model_name_or_path)
+        return cls(model, model_path=model_name_or_path)
+        # return cls(model, tokenizer=tokenizer, seq_len=seq_len, model_path=model_name_or_path)
 
     def prepare_inputs_for_generation(self, input_ids: torch.LongTensor, **kwargs):
         kwargs.update({"input_ids": input_ids})
         return kwargs
 
-    def generate(
-            self, text: Union[str, NoneType] = None,
-            input_ids: Union[torch.LongTensor, NoneType] = None,
-            max_length: Union[int, None] = None,
-            min_length: Union[int, NoneType] = None,
-            do_sample: Union[bool, NoneType] = None,
-            early_stopping: Union[bool, NoneType] = None,
-            num_beams: Union[int, NoneType] = None,
-            temperature: Union[float, NoneType] = None,
-            top_k: Union[int, NoneType] = None,
-            top_p: Union[float, NoneType] = None,
-            repetition_penalty: Union[float, NoneType] = None,
-            bad_words_ids: Union[Iterable[int], NoneType] = None,
-            bos_token_id: Union[int, NoneType] = None,
-            pad_token_id: Union[int, NoneType] = None,
-            eos_token_id: Union[int, NoneType] = None,
-            length_penalty: Union[float, NoneType] = None,
-            no_repeat_ngram_size: Union[int, NoneType] = None,
-            num_return_sequences: Union[int, NoneType] = None,
-            decoder_start_token_id: Union[int, NoneType] = None,
-            use_cache: Union[bool, NoneType] = None,
-            **model_kwargs):
-        if text is not None:
-            input_ids = torch.cuda.LongTensor([self.tokenizer(text)['input_ids']])
-        if eos_token_id is None:
-            eos_token_id = self.eos_token_id
-        if pad_token_id is None:
-            pad_token_id = self.pad_token_id
-        res = super().generate(
-            input_ids=input_ids,
-            max_length=max_length,
-            min_length=min_length,
-            do_sample=do_sample,
-            early_stopping=early_stopping,
-            num_beams=num_beams,
-            temperature=temperature,
-            top_k=top_k,
-            top_p=top_p,
-            repetition_penalty=repetition_penalty,
-            bad_words_ids=bad_words_ids,
-            bos_token_id=bos_token_id,
-            pad_token_id=pad_token_id,
-            eos_token_id=eos_token_id,
-            length_penalty=length_penalty,
-            no_repeat_ngram_size=no_repeat_ngram_size,
-            num_return_sequences=num_return_sequences,
-            decoder_start_token_id=decoder_start_token_id,
-            use_cache=use_cache,
-            **model_kwargs
-        )
-        return list(map(self.tokenizer.decode, res.tolist()))
+    # def generate(
+    #         self, text: Union[str, NoneType] = None,
+    #         input_ids: Union[torch.LongTensor, NoneType] = None,
+    #         max_length: Union[int, None] = None,
+    #         min_length: Union[int, NoneType] = None,
+    #         do_sample: Union[bool, NoneType] = None,
+    #         early_stopping: Union[bool, NoneType] = None,
+    #         num_beams: Union[int, NoneType] = None,
+    #         temperature: Union[float, NoneType] = None,
+    #         top_k: Union[int, NoneType] = None,
+    #         top_p: Union[float, NoneType] = None,
+    #         repetition_penalty: Union[float, NoneType] = None,
+    #         bad_words_ids: Union[Iterable[int], NoneType] = None,
+    #         bos_token_id: Union[int, NoneType] = None,
+    #         pad_token_id: Union[int, NoneType] = None,
+    #         eos_token_id: Union[int, NoneType] = None,
+    #         length_penalty: Union[float, NoneType] = None,
+    #         no_repeat_ngram_size: Union[int, NoneType] = None,
+    #         num_return_sequences: Union[int, NoneType] = None,
+    #         decoder_start_token_id: Union[int, NoneType] = None,
+    #         use_cache: Union[bool, NoneType] = None,
+    #         **model_kwargs):
+    #     if text is not None:
+    #         input_ids = torch.cuda.LongTensor([self.tokenizer(text)['input_ids']])
+    #     if eos_token_id is None:
+    #         eos_token_id = self.eos_token_id
+    #     if pad_token_id is None:
+    #         pad_token_id = self.pad_token_id
+    #     res = super().generate(
+    #         input_ids=input_ids,
+    #         max_length=max_length,
+    #         min_length=min_length,
+    #         do_sample=do_sample,
+    #         early_stopping=early_stopping,
+    #         num_beams=num_beams,
+    #         temperature=temperature,
+    #         top_k=top_k,
+    #         top_p=top_p,
+    #         repetition_penalty=repetition_penalty,
+    #         bad_words_ids=bad_words_ids,
+    #         bos_token_id=bos_token_id,
+    #         pad_token_id=pad_token_id,
+    #         eos_token_id=eos_token_id,
+    #         length_penalty=length_penalty,
+    #         no_repeat_ngram_size=no_repeat_ngram_size,
+    #         num_return_sequences=num_return_sequences,
+    #         decoder_start_token_id=decoder_start_token_id,
+    #         use_cache=use_cache,
+    #         **model_kwargs
+    #     )
+    #     return list(map(self.tokenizer.decode, res.tolist()))
 
-    def __call__(self, text=None, input_ids=None, labels=None, **kwargs):
-        if input_ids is None:
-            if text is None:
-                text = ""
-            input_ids = torch.cuda.LongTensor([self.tokenizer(text)['input_ids']])
-        if isinstance(input_ids, list):
-            input_ids = torch.cuda.LongTensor(input_ids)
-        if isinstance(labels, list):
-            labels = torch.cuda.LongTensor(labels)
-        res = []
-        if labels is not None:
-            lbls = labels
-        else:
-            lbls = [None] * len(input_ids)
-        loss = None
-        original_context_length = 0
-        seq_len = self.seq_len
-        for tokens, lbl in zip(input_ids, lbls):
-            context_tokens = tokens.tolist()
-            context_length = len(context_tokens)
-            original_context_length = len(context_tokens)
+    # def __call__(self, text=None, input_ids=None, labels=None, **kwargs):
+    #     if input_ids is None:
+    #         if text is None:
+    #             text = ""
+    #         input_ids = torch.cuda.LongTensor([self.tokenizer(text)['input_ids']])
+    #     if isinstance(input_ids, list):
+    #         input_ids = torch.cuda.LongTensor(input_ids)
+    #     if isinstance(labels, list):
+    #         labels = torch.cuda.LongTensor(labels)
+    #     res = []
+    #     if labels is not None:
+    #         lbls = labels
+    #     else:
+    #         lbls = [None] * len(input_ids)
+    #     loss = None
+    #     original_context_length = 0
+    #     seq_len = self.seq_len
+    #     for tokens, lbl in zip(input_ids, lbls):
+    #         context_tokens = tokens.tolist()
+    #         context_length = len(context_tokens)
+    #         original_context_length = len(context_tokens)
             
-            while context_length > seq_len:
-                seq_len += 16
-            if context_length < seq_len:
-                context_tokens.extend([self.pad_token_id] * (seq_len - context_length))
-                if labels is not None:
-                    lbl = lbl.tolist()
-                    lbl.extend([self.pad_token_id] * (seq_len - context_length))
-                    lbl = torch.cuda.LongTensor(lbl)
-            if context_length > 2048:
-                context_tokens = context_tokens[-2048:]
-                if labels is not None:
-                    lbl = lbl.tolist()[-2048:]
-                    lbl = torch.cuda.LongTensor(lbl)
-            context_tokens_tensor = torch.cuda.LongTensor(context_tokens)
-            context_length_tensor = torch.cuda.LongTensor([context_length])
+    #         while context_length > seq_len:
+    #             seq_len += 16
+    #         if context_length < seq_len:
+    #             context_tokens.extend([self.pad_token_id] * (seq_len - context_length))
+    #             if labels is not None:
+    #                 lbl = lbl.tolist()
+    #                 lbl.extend([self.pad_token_id] * (seq_len - context_length))
+    #                 lbl = torch.cuda.LongTensor(lbl)
+    #         if context_length > 2048:
+    #             context_tokens = context_tokens[-2048:]
+    #             if labels is not None:
+    #                 lbl = lbl.tolist()[-2048:]
+    #                 lbl = torch.cuda.LongTensor(lbl)
+    #         context_tokens_tensor = torch.cuda.LongTensor(context_tokens)
+    #         context_length_tensor = torch.cuda.LongTensor([context_length])
 
-            torch.distributed.broadcast(context_length_tensor, mpu.get_model_parallel_src_rank(),
-                                        group=mpu.get_model_parallel_group())
-            torch.distributed.broadcast(context_tokens_tensor, mpu.get_model_parallel_src_rank(),
-                                        group=mpu.get_model_parallel_group())
+    #         torch.distributed.broadcast(context_length_tensor, mpu.get_model_parallel_src_rank(),
+    #                                     group=mpu.get_model_parallel_group())
+    #         torch.distributed.broadcast(context_tokens_tensor, mpu.get_model_parallel_src_rank(),
+    #                                     group=mpu.get_model_parallel_group())
 
-            # context_length = context_length_tensor[0].item()
+    #         # context_length = context_length_tensor[0].item()
 
-            tokens = context_tokens_tensor
-            tokens = tokens.view(1, -1).contiguous()
-            tokens = tokens.to(torch.cuda.current_device())
-            attention_mask, loss_mask, position_ids = get_masks_and_position_ids(tokens, self.pad_token_id, False,
-                                                                                 False)
-            lm_logits = self.model(tokens, position_ids, attention_mask)
-            loss = None
-            if labels is not None:
-                # Shift so that tokens < n predict n
-                shift_logits = lm_logits[..., :-1, :].contiguous()
-                shift_labels = lbl[..., 1:].contiguous()
-                # Flatten the tokens
-                loss_fct = CrossEntropyLoss(ignore_index=self.pad_token_id)
-                loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-            res.append((lm_logits, loss))
-        logits = torch.cat([x[0] for x in res], dim=0)[:, : original_context_length, :]
-        if loss is not None:
-            loss = [x[1] for x in res]
-        return ModelOutput(logits, loss)
+    #         tokens = context_tokens_tensor
+    #         tokens = tokens.view(1, -1).contiguous()
+    #         tokens = tokens.to(torch.cuda.current_device())
+    #         attention_mask, loss_mask, position_ids = get_masks_and_position_ids(tokens, self.pad_token_id, False,
+    #                                                                              False)
+    #         lm_logits = self.model(tokens, position_ids, attention_mask)
+    #         loss = None
+    #         if labels is not None:
+    #             # Shift so that tokens < n predict n
+    #             shift_logits = lm_logits[..., :-1, :].contiguous()
+    #             shift_labels = lbl[..., 1:].contiguous()
+    #             # Flatten the tokens
+    #             loss_fct = CrossEntropyLoss(ignore_index=self.pad_token_id)
+    #             loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+    #         res.append((lm_logits, loss))
+    #     logits = torch.cat([x[0] for x in res], dim=0)[:, : original_context_length, :]
+    #     if loss is not None:
+    #         loss = [x[1] for x in res]
+    #     return ModelOutput(logits, loss)
