@@ -112,3 +112,6 @@ data/
 
 # RPM files
 *.rpm
+
+# Singularity 
+*.sif
