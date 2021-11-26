@@ -24,6 +24,10 @@ import ilm.mask.util
 import ilm.tokenize_util
 
 from src.xl_wrapper import RuGPT3XL 
+import deepspeed.ops.sparse_attention.sparse_attn_op
+
+warnings.filterwarnings("ignore")
+os.environ["USE_DEEPSPEED"] = "1"
 
 class Task(Enum):
   # Example: She ate <?> for <?><S>cereal<E>breakfast<E>
