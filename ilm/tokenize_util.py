@@ -7,7 +7,7 @@ import warnings
 
 from .constants import GPT2_TOKENIZER_LEN
 from .paths import OFFICIAL_GPT2_ENCODER_DIR, OFFICIAL_RUGPT3_ENCODER_DIR
-from .encoder import Encoder as OfficialEncoder
+from .official_gpt2_encoder.encoder import Encoder as OfficialEncoder
 
 class Tokenizer(Enum):
   CUSTOM = 0
