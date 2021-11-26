@@ -76,7 +76,7 @@ def update_tokenizer(additional_ids_to_tokens, tokenizer=DEFAULT_TOKENIZER):
   if len(additional_ids_to_tokens) != len(additional_tokens_to_ids):
     raise ValueError()
 
-  if tokenizer == Tokenizer.GPT2:
+  if tokenizer == Tokenizer.GPT2 or tokenizer == Tokenizer.RUGPT3XL:
     vocab_size_before = len(state.encoder)
     state.encoder.update(additional_tokens_to_ids)
     state.decoder.update(additional_ids_to_tokens)
