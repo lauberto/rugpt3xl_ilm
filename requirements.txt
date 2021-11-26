@@ -19,5 +19,5 @@ sentencepiece==0.1.91
 six==1.15.0
 tokenizers==0.5.2
 tqdm==4.46.0
-transformers==2.7.0
+triton==0.2.3
 urllib3==1.25.9
