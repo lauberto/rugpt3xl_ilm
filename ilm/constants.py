@@ -2,7 +2,8 @@ GPT2_MODEL_NAMES = [
     'gpt2',
     'gpt2-medium',
     'gpt2-large',
-    'gpt2-xl'
+    'gpt2-xl',
+    'rugpt3xl'
 ]
 RUGPT3XL_MODEL_NAME = 'sberbank-ai/rugpt3xl'
 GPT2_TOKENIZER_LEN = 50257

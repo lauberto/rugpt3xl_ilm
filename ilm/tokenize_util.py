@@ -12,7 +12,7 @@ from .official_gpt2_encoder.encoder import Encoder as OfficialEncoder
 class Tokenizer(Enum):
   CUSTOM = 0
   GPT2 = 1
-  RUGPTXL = 2
+  RUGPT3XL = 2
 
 DEFAULT_TOKENIZER = Tokenizer.GPT2
 

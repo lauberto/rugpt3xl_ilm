@@ -402,7 +402,7 @@ def train(args):
   # Load model
   print('Initializing model...')
   set_random_seed(args.seed)
-  if args.model_name in ilm.constants.GPT2_MODEL_NAMES:
+  if args.model_name in ilm.constants.GPT2_MODEL_NAMES and args.model_name != ilm.constants.RUGPT3XL_MODEL_NAME:
     model_type = GPT2LMHeadModel
     cfg_type = GPT2Config
   elif args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
