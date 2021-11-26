@@ -420,7 +420,7 @@ def train(args):
     else:
       print('from pretrained checkpoint')
       if args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
-        model = model_type.from_pretrained(args.model_name, tokenizer=tokenizer, seq_len=512)
+        model = model_type.from_pretrained(args.model_name)
       else:
         model = model_type.from_pretrained(args.model_name)
   model.resize_token_embeddings(vocab_size)
