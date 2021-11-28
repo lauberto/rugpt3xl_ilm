@@ -95,7 +95,7 @@ def update_tokenizer(additional_ids_to_tokens, tokenizer=DEFAULT_TOKENIZER):
 def tokenize(s, tokenizer=DEFAULT_TOKENIZER):
   state = _get_tokenizer_state(tokenizer)
   
-  if tokenizer == Tokenizer.GPT2:
+  if tokenizer == Tokenizer.GPT2 or tokenizer == Tokenizer.RUGPT3XL:
     tokens_regex = re.findall(state.pat, s)
     tokens_ids = []
     for token in tokens_regex:
@@ -115,7 +115,7 @@ def tokenize(s, tokenizer=DEFAULT_TOKENIZER):
 def tokens_to_ids(tokens, tokenizer=DEFAULT_TOKENIZER):
   state = _get_tokenizer_state(tokenizer)
 
-  if tokenizer == Tokenizer.GPT2:
+  if tokenizer == Tokenizer.GPT2 or tokenizer == Tokenizer.RUGPT3XL:
     tokens_ids = []
     for token in tokens:
       token = ''.join(state.byte_encoder[b] for b in token.encode('utf-8'))
@@ -134,7 +134,7 @@ def tokens_to_ids(tokens, tokenizer=DEFAULT_TOKENIZER):
 def ids_to_tokens(tokens_ids, tokenizer=DEFAULT_TOKENIZER):
   state = _get_tokenizer_state(tokenizer)
 
-  if tokenizer == Tokenizer.GPT2:
+  if tokenizer == Tokenizer.GPT2 or tokenizer == Tokenizer.RUGPT3XL:
     tokens = [state.decoder[token_id] for token_id in tokens_ids]
     tokens = [bytearray([state.byte_decoder[c] for c in token]).decode('utf-8', errors=state.errors) for token in tokens]
   elif tokenizer == Tokenizer.CUSTOM:
@@ -149,7 +149,7 @@ def ids_to_tokens(tokens_ids, tokenizer=DEFAULT_TOKENIZER):
 
 
 def detokenize(tokens, tokenizer=DEFAULT_TOKENIZER):
-  if tokenizer == Tokenizer.GPT2:
+  if tokenizer == Tokenizer.GPT2 or tokenizer == Tokenizer.RUGPT3XL:
     s = ''.join(tokens)
   elif tokenizer == Tokenizer.CUSTOM:
     s = ' '.join(tokens)
