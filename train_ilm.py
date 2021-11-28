@@ -105,6 +105,8 @@ def doc_and_char_masks_to_input_and_tt(
   # Tokenize document
   try:
     doc_tokens = ilm.tokenize_util.tokenize(doc, tokenizer=tokenizer)
+    print("doc_tokens: ", doc_tokens)
+    print("-"*75)
     doc_tokens_ids = ilm.tokenize_util.tokens_to_ids(doc_tokens, tokenizer=tokenizer)
   except:
     doc_tokens = None
