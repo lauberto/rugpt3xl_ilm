@@ -2,6 +2,7 @@ from enum import Enum
 from collections import defaultdict
 import multiprocessing
 import os
+import sys
 import pickle
 import random
 import time
@@ -107,6 +108,7 @@ def doc_and_char_masks_to_input_and_tt(
     doc_tokens_ids = ilm.tokenize_util.tokens_to_ids(doc_tokens, tokenizer=tokenizer)
   except:
     doc_tokens = None
+    print("Failed to tokenize document!", sys.exc_info()[0])
     #error_to_count['Failed to tokenize document'] += len(char_masks)
 
   # Align character masks to tokens
@@ -116,6 +118,7 @@ def doc_and_char_masks_to_input_and_tt(
       try:
         tok_mask = ilm.mask.util.align_char_mask_to_tokens(doc, doc_tokens, char_mask)
       except:
+        print("Failed to align character-level mask to tokens", sys.exc_info()[0])
         #error_to_count['Failed to align character-level mask to tokens'] += 1
         continue
       tok_masks.append(tok_mask)
@@ -316,6 +319,7 @@ def train(args):
     print('Loading training data')
     loaded_from_cache = False
     if args.data_cache:
+      print('loading from cache')
       try:
         train_inputs = np.load(out_fn_to_fp('train_inp.npy'))
         train_tts = np.load(out_fn_to_fp('train_tts.npy'))
@@ -325,6 +329,7 @@ def train(args):
       except:
         pass
     if not loaded_from_cache:
+      print('not loading from cache')
       train_inputs, train_tts, train_num_docs = masked_dataset_to_inputs_and_tts(
           'train',
           tokenizer,
@@ -338,7 +343,7 @@ def train(args):
         with open(out_fn_to_fp('train_num_docs.pkl'), 'wb') as f:
           pickle.dump(train_num_docs, f)
     train_tt_to_count = {TargetType(k):v for k, v in zip(*np.unique(train_tts, return_counts=True))}
-    print(train_tt_to_count)
+    print("train_tt_to_count", train_tt_to_count)
     num_unmasked = train_tt_to_count.get(TargetType.CONTEXT, 0)
     num_masked = train_tt_to_count.get(TargetType.INFILL, 0)
     print('Mask rate (tokens): {:.4f}'.format(num_masked / (num_unmasked + num_masked)))
@@ -424,7 +429,7 @@ def train(args):
     else:
       print('from pretrained checkpoint')
       if args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
-        model = model_type.from_pretrained(args.model_name)
+        model = RuGPT3XL.from_pretrained(args.model_name, tokenizer=tokenizer)
       else:
         model = model_type.from_pretrained(args.model_name)
   model.resize_token_embeddings(vocab_size)

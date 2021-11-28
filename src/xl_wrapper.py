@@ -173,7 +173,7 @@ class RuGPT3XL(PreTrainedModel):
 
     @classmethod
     # def from_pretrained(cls, model_name_or_path=None, seq_len=512, weights_path=None, deepspeed_config_path=None):
-    def from_pretrained(cls, model_name_or_path=None, seq_len=512, weights_path=None, deepspeed_config_path=None):
+    def from_pretrained(cls, model_name_or_path=None, seq_len=512, weights_path=None, deepspeed_config_path=None, tokenizer=None):
         init_method = 'tcp://' + os.getenv('MASTER_ADDR', 'localhost') + ':' + os.getenv('MASTER_PORT', '6000')
         try:
             torch.distributed.init_process_group(backend='nccl', world_size=1, rank=0, init_method=init_method)
@@ -196,8 +196,8 @@ class RuGPT3XL(PreTrainedModel):
         model = setup_model(weights_path, deepspeed_config_path)
         model.cuda()
         model = model.eval()
-        return cls(model, model_path=model_name_or_path)
-        # return cls(model, tokenizer=tokenizer, seq_len=seq_len, model_path=model_name_or_path)
+        # return cls(model, model_path=model_name_or_path)
+        return cls(model, tokenizer=tokenizer, seq_len=seq_len, model_path=model_name_or_path)
 
     def prepare_inputs_for_generation(self, input_ids: torch.LongTensor, **kwargs):
         kwargs.update({"input_ids": input_ids})
