@@ -431,9 +431,10 @@ def train(args):
     else:
       print('from pretrained checkpoint')
       if args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
-        model = RuGPT3XL.from_pretrained(args.model_name, tokenizer=tokenizer)
+        model = RuGPT3XL.from_pretrained(args.model_name, tokenizer=ilm.tokenize_util._get_tokenizer_state(tokenizer))
       else:
         model = model_type.from_pretrained(args.model_name)
+  print("new vocab size:", vocab_size)
   model.resize_token_embeddings(vocab_size)
   model.to(device)
   model.train()
