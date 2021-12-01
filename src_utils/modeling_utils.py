@@ -29,7 +29,7 @@ from torch.nn import CrossEntropyLoss
 
 from .activations import get_activation
 from .configuration_utils import PretrainedConfig
-from deepspeed import deepspeed_config, is_deepspeed_zero3_enabled
+from .deepspee import deepspeed_config, is_deepspeed_zero3_enabled
 from .file_utils import (
     DUMMY_INPUTS,
     FLAX_WEIGHTS_NAME,
@@ -603,7 +603,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if base_model is not self:
             return base_model.get_input_embeddings()
         else:
-            raise base_model.get_input_embeddings()
+            raise NotImplementedError
 
 
 
