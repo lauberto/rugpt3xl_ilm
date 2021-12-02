@@ -1,8 +1,16 @@
 from functools import lru_cache
+import os
 
 from nltk import sent_tokenize, word_tokenize as nltk_word_tokenize
 
 from .tokenize_util import tokens_offsets
+
+def check_exists_and_return(path):
+  if os.path.isfile(path):
+    return path
+  else:
+    raise ValueError("You should pass an existing path.")
+
 
 def word_tokenize(x):
   x_tokens = nltk_word_tokenize(x)

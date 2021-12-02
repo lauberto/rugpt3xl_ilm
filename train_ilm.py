@@ -7,6 +7,7 @@ import pickle
 import random
 import time
 import warnings
+from ilm.string_util import check_exists_and_return
 
 import numpy as np
 import torch
@@ -411,25 +412,33 @@ def train(args):
   # Load model
   print('Initializing model...')
   set_random_seed(args.seed)
-  if args.model_name in ilm.constants.GPT2_MODEL_NAMES and args.model_name != ilm.constants.RUGPT3XL_MODEL_NAME:
+  if args.model_name in ilm.constants.GPT2_MODEL_NAMES:
     model_type = GPT2LMHeadModel
     cfg_type = GPT2Config
-  elif args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
+  elif args.rugpt3xl:
     model_type = RuGPT3XL
   if resuming:
     print('from saved checkpoint (resuming)')
     model = model_type.from_pretrained(args.train_dir)
   else:
     if args.train_from_scratch:
-      if args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
+      if args.rugpt3xl:
         raise NotImplementedError("Training from scratch with rugpt3xl is not implemented.") 
       print('from scratch')
       cfg = cfg_type.from_pretrained(args.model_name)
       model = model_type(cfg)
     else:
       print('from pretrained checkpoint')
-      if args.model_name == ilm.constants.RUGPT3XL_MODEL_NAME:
-        model = RuGPT3XL.from_pretrained(args.model_name, tokenizer=tokenizer)
+      if args.rugpt3xl:
+        if args.rugpt3xl_weights:
+          weights = check_exists_and_return(args.rugpt3xl_weights)
+        else:
+          raise ValueError("Argument `rugpt3xl_weights` is missing.")
+        if args.rugpt3xl_deepspeed_path:
+          deepspeed_config_path = check_exists_and_return(args.rugpt3xl_deepspeed_path)
+        else:
+          raise ValueError("Argument `rugpt3xl_deepspeed_path` is missing.")
+        model = model_type.from_pretrained(args.model_name, weights_path=weights, deepspeed_config_path=deepspeed_config_path)
       else:
         model = model_type.from_pretrained(args.model_name)
   model.resize_token_embeddings(vocab_size)
@@ -682,7 +691,10 @@ if __name__ == '__main__':
   data_args.add_argument('--data_loader_num_workers', type=int)
 
   model_args = parser.add_argument_group('Model')
-  model_args.add_argument('--model_name', type=str, choices=ilm.constants.GPT2_MODEL_NAMES)
+  model_args.add_argument('--model_name', type=str) #, choices=ilm.constants.GPT2_MODEL_NAMES)
+  model_args.add_argument('--rugpt3xl', action='store_true', dest='rugpt3xl')
+  model_args.add_argument('--rugpt3xl_weights', type=str)
+  model_args.add_argument('--rugpt3xl_deepspeed_path', type=str)
 
   train_args = parser.add_argument_group('Train')
   train_args.add_argument('--train_examples_tag', type=str)
@@ -720,6 +732,8 @@ if __name__ == '__main__':
       data_cache=True,
       data_loader_num_workers=4,
       model_name='gpt2',
+      rugpt3xl=False,
+      rugpt3xl_weights=None,
       train_examples_tag='train',
       train_max_num_examples=None,
       train_num_epochs=None,
